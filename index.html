@@ -846,8 +846,10 @@ function initW(dept,deptObjTitle){
     unit:'%',title:'',measurement:'',baseline:0,target:100,from:'Q2 2026',to:'Q4 2026',
     suggestions:[],selIdx:-1,_fetching:false,smartResult:null};
   if(deptObjTitle){
-    const obj=(DO[dept]||[]).find(o=>o.title===deptObjTitle);
-    if(obj)W.companyObjId=obj.co;
+    const liveObj=goals.find(function(g){return g.type==='dept'&&g.dept===dept&&g.title===deptObjTitle;});
+    const staticObj=(DO[dept]||[]).find(o=>o.title===deptObjTitle);
+    const obj=liveObj||staticObj;
+    if(obj) W.companyObjId=liveObj?liveObj.companyObjId:(obj.co||'');
   }
 }
 function openWizard(dept,deptObjTitle){
@@ -882,7 +884,7 @@ function rWiz(){
 function rS0(){
   if(W.goalType==='employee'){
     const dObjs=goals.filter(function(g){return g.dept===W.dept&&g.type==='dept';}).concat(DO[W.dept]||[]).filter(function(o,i,arr){return arr.findIndex(function(x){return x.title===o.title;})===i;});
-    const selObj=dObjs.find(o=>o.title===W.deptObj);
+    const selObj=goals.find(function(g){return g.type==='dept'&&g.dept===W.dept&&g.title===W.deptObj;})||dObjs.find(o=>o.title===W.deptObj);
     const apHtml=selObj?`<div class="aprev show"><div class="aprev-lbl">Supports company objective</div><div style="display:flex;align-items:center;gap:4px;margin-top:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${getCoById(selObj.co).color}"></span><span style="font-size:12px;font-weight:500">${getCoById(selObj.co).label}</span></div></div>`
       :`<div class="aprev" id="aprev-box"><div class="aprev-lbl">Supports company objective</div><div id="aprev-chain"></div></div>`;
     return `<div class="fg"><div class="fl">Department</div>
@@ -978,7 +980,10 @@ function rS3(){
 function wDeptCh(){ W.dept=document.getElementById('w-dept').value; W.deptObj=''; W.companyObjId=''; W.suggestions=[]; W._fetching=false; rWiz(); }
 function wDoCh(){
   const v=document.getElementById('w-do').value; W.deptObj=v;
-  const obj=(DO[W.dept]||[]).find(o=>o.title===v); W.companyObjId=obj?obj.co:'';
+  const liveObj=goals.find(function(g){return g.type==='dept'&&g.dept===W.dept&&g.title===v;});
+  const staticObj=(DO[W.dept]||[]).find(o=>o.title===v);
+  const obj=liveObj||staticObj;
+  W.companyObjId=obj?(liveObj?liveObj.companyObjId:obj.co):'';
   const box=document.getElementById('aprev-box'),chain=document.getElementById('aprev-chain');
   if(box&&chain&&obj){
     const co=getCoById(obj.co);
@@ -1001,9 +1006,10 @@ function wN2(){ const m=((document.getElementById('w-metric')||{}).value||'').tr
 function wSave(){
   W.from=document.getElementById('w-from').value; W.to=document.getElementById('w-to').value;
   goals.push({id:nid(),type:W.goalType,dept:W.dept,title:W.title,measurement:W.measurement,unit:W.unit,
-    baseline:W.baseline,target:W.target,actual:W.baseline,from:W.from,to:W.to,owner:CU,
-    deptObj:W.goalType==='dept'?'':W.deptObj,companyObjId:W.companyObjId,status:'Draft',notes:''});
-  closeWiz(); nav(returnPage);
+    baseline:W.baseline,target:W.target,actual:W.baseline,from:W.from,to:W.to,
+    owner:WHO||CU,deptObj:W.goalType==='dept'?'':W.deptObj,companyObjId:W.companyObjId,
+    status:'Draft',notes:'',createdBy:WHO||CU,createdAt:new Date().toISOString()});
+  closeWiz(); nav(returnPage); autoSave();
 }
 
 // ═══ AI ═══════════════════════════════════════════════════════════
@@ -1203,17 +1209,6 @@ window.qsave    = function(id){_oq(id);autoSave();};
 window.dupG     = function(id){_od(id);autoSave();};
 window.delG     = function(id){if(!confirm("Delete this goal?"))return;goals=goals.filter(function(g){return g.id!==id;});refresh();autoSave();};
 window.saveEdit = function(){_ose();autoSave();};
-window.wSave    = function(){
-  var from=document.getElementById("w-from").value;
-  var to=document.getElementById("w-to").value;
-  goals.push({id:nid(),type:W.goalType,dept:W.dept,title:W.title,
-    measurement:W.measurement,unit:W.unit,baseline:W.baseline,
-    target:W.target,actual:W.baseline,from:from,to:to,
-    owner:WHO||"Team",deptObj:W.goalType==="dept"?"":W.deptObj,
-    companyObjId:W.companyObjId,status:"Draft",notes:"",
-    createdBy:WHO||"Team",createdAt:new Date().toISOString()});
-  closeWiz();nav(returnPage);autoSave();
-};
 
 document.addEventListener("DOMContentLoaded",function(){
   var ui=document.querySelector(".user-info");
