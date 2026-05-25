@@ -417,34 +417,7 @@ function deptAvgPrg(dept){ const dg=goals.filter(g=>g.type==='dept'&&g.dept===de
 
 function getCoById(id){ return COG.find(g=>g.id===id)||COG[0]; }
 
-function seedDept(){
-  const arr=[];
-  Object.entries(DO).forEach(([dept,objs])=>{
-    objs.forEach(obj=>{
-      const k=KPI[obj.id]||{m:'KPI',u:'%',b:0,t:100,a:0};
-      arr.push({id:nid(),type:'dept',dept,title:obj.title,doid:obj.id,
-        measurement:k.m,unit:k.u,baseline:k.b,target:k.t,actual:k.a,
-        from:'Q2 2026',to:obj.timeline||'Q4 2026',
-        owner:obj.owner,companyObjId:obj.co,
-        deptObj:obj.title,status:'Draft',notes:''});
-    });
-  });
-  return arr;
-}
-
-let goals=seedDept();
-
-// Sample employee goals
-[
-  {dept:'Sales — Israel',title:'Secure 3 new OEM serial production accounts by Q3',measurement:'Signed serial production contracts',unit:'deals',baseline:0,target:3,actual:1,from:'Q2 2026',to:'Q3 2026',deptObj:'Advance 6 active projects from S06 to S10 and sign 8 new serial production agreements',companyObjId:'co1',status:'Draft'},
-  {dept:'Sales — Israel',title:'Map and document expansion plans for top 10 strategic accounts',measurement:'Accounts with documented expansion plan',unit:'accounts',baseline:0,target:10,actual:4,from:'Q2 2026',to:'Q3 2026',deptObj:'Achieve 30% revenue growth vs 2025 through new accounts and wallet share expansion in existing strategic accounts',companyObjId:'co1',status:'Approved'},
-  {dept:'R&D',title:'Complete FuSa documentation for ZED product line by Q3',measurement:'FuSa milestone completion',unit:'%',baseline:0,target:100,actual:35,from:'Q2 2026',to:'Q3 2026',deptObj:'Release TIM EthernetIP, Small MOT-HM, and New ZED to PT (Prototype) stage',companyObjId:'co2',status:'Draft'},
-  {dept:'R&D',title:'Onboard first Autotuning pilot customer and validate feedback loop',measurement:'Pilots with active feedback',unit:'pilots',baseline:0,target:1,actual:1,from:'Q2 2026',to:'Q3 2026',deptObj:'Develop and validate AI-based features in drives — AI Autotuning beta live with 3 pilot customers, demonstrating 60% reduction in commissioning time vs manual baseline',companyObjId:'co2',status:'Approved'},
-  {dept:'Operations',title:'Onboard all 10 teams to unified task management tool by Q3',measurement:'Teams fully onboarded',unit:'%',baseline:0,target:100,actual:40,from:'Q2 2026',to:'Q3 2026',deptObj:'Automate repetitive operational tasks using Priority ERP: reduce production planning cycle from 5 days to 2 days, eliminate manual OTD and inventory spreadsheet reporting',companyObjId:'co4',status:'Draft'},
-  {dept:'Marketing',title:'Grow inbound qualified leads 30% via LinkedIn and SEO by Q4',measurement:'Qualified lead volume growth',unit:'%',baseline:0,target:30,actual:7,from:'Q2 2026',to:'Q4 2026',deptObj:'Generate 30 qualified inbound leads per month from digital channels (web, LinkedIn, Google Ads)',companyObjId:'co1',status:'Draft'},
-  {dept:'Sales — Israel',title:'Map and document expansion plans for top 10 strategic accounts',measurement:'Accounts with documented expansion plan',unit:'accounts',baseline:0,target:10,actual:4,from:'Q2 2026',to:'Q3 2026',deptObj:'Achieve 30% revenue growth vs 2025 through new accounts and wallet share expansion in existing strategic accounts',companyObjId:'co1',status:'Draft'},
-  {dept:'Operations',title:'Define and roll out company-wide OKR tracking process',measurement:'Departments on OKR tracking',unit:'%',baseline:0,target:100,actual:20,from:'Q2 2026',to:'Q4 2026',deptObj:'Automate repetitive operational tasks using Priority ERP: reduce production planning cycle from 5 days to 2 days, eliminate manual OTD and inventory spreadsheet reporting',companyObjId:'co4',status:'Draft'},
-].forEach(function(e){ goals.push(Object.assign({id:nid(),type:'employee',owner:'Roni Kedar',notes:''},e)); });
+let goals=[];
 
 // ═══ HELPERS ══════════════════════════════════════════════════════
 const CU='Roni Kedar';
