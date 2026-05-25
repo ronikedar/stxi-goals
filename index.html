@@ -227,7 +227,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Ar
 <div class="page active" id="page-dashboard">
   <div class="ph">
     <div><div class="pt">Dashboard</div><div class="ps">STXI Motion · Q2 2026 – Q1 2027</div></div>
-    <button class="btn btnp" onclick="openWizard()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add goal</button>
+    <button class="btn btnp" onclick="openCompanyModal()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add company objective</button>
   </div>
   <div class="sg" id="db-stats"></div>
   <div class="card" style="margin-bottom:12px"><div style="font-size:13px;font-weight:600;margin-bottom:14px">Progress by department</div><div id="db-dept"></div></div>
@@ -278,9 +278,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Ar
   </div>
 </div>
 
+<div class="mbg" id="company-modal">
+  <div class="modal">
+    <div class="mhd"><div class="mtitle" id="company-modal-title">Company objective</div><button class="mcls" onclick="closeCompanyModal()"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div id="company-body"></div>
+  </div>
+</div>
+
 <script>
-// ═══ COMPANY OBJECTIVES — 4 simplified ═══════════════════════════
-const COG = [
+// Legacy company objective catalog used only to migrate older saved data
+// that still points to the original static ids.
+const LEGACY_COMPANY_OBJECTIVES = [
   {id:'co1',label:'Growth',color:'#E8220A',
    title:'Achieve 30% global revenue growth and establish market leadership in target segments',
    sub:'Achieve 30% global revenue growth and establish market leadership in target segments'},
@@ -294,116 +302,8 @@ const COG = [
    title:'Build an agile, AI-powered organization: automate repetitive processes across all departments and improve overall efficiency by 50%',
    sub:'Build an agile, AI-powered organization: automate repetitive processes across all departments and improve overall efficiency by 50%'},
 ];
-const ALL_CO = COG.map(g=>g.title);
-
 const DEPTS = ['Sales — Israel','Sales — Germany','Sales — USA','R&D','Operations','Engineering','Marketing','Finance','Quality','Tech Support'];
 const QS = ['Q2 2026','Q3 2026','Q4 2026','Q1 2027'];
-
-// ═══ DEPARTMENT OBJECTIVES ════════════════════════════════════════
-const DO = {
-  'Sales — Israel':[
-    {id:'si1',title:'Achieve 30% revenue growth vs 2025 through new accounts and wallet share expansion in existing strategic accounts',co:'co1',owner:'Yosi Balbul',timeline:'Q4 2026'},
-    {id:'si2',title:'Advance 6 active projects from S06 to S10 and sign 8 new serial production agreements',co:'co1',owner:'Yosi Balbul',timeline:'Q4 2026'},
-    {id:'si3',title:'Acquire 3 new KUKA partner customers through structured partnership engagement and technical qualification',co:'co1',owner:'Yosi Balbul',timeline:'Q4 2026'},
-  ],
-  'Sales — Germany':[
-    {id:'sg1',title:'Achieve pre-serial status with 3 new accounts in mobile platforms and intralogistics segments',co:'co1',owner:'Aviv Halperin',timeline:'Q4 2026'},
-    {id:'sg2',title:'Develop and execute go-to-market entry plan for Italy and France: identify 30 target companies per market, achieve first qualified opportunity in at least one market',co:'co1',owner:'Aviv Halperin',timeline:'Q4 2026'},
-    {id:'sg3',title:'Build structured account plans for top 15 DACH prospects with quarterly pipeline reviews',co:'co1',owner:'Aviv Halperin',timeline:'Q4 2026'},
-    {id:'sg4',title:'Define and implement cybersecurity processes for customer-facing systems and data handling in compliance with EU NIS2 directive',co:'co4',owner:'Aviv Halperin',timeline:'Q3 2026'},
-  ],
-  'Sales — USA':[
-    {id:'su1',title:'Grow USA revenue by 35% vs 2025 by signing new OEM and distribution channel partners',co:'co1',owner:'Yosi Balbul',timeline:'Q4 2026'},
-    {id:'su2',title:'Build $1M+ serial production pipeline with Tier-1 OEM partners in mobile robotics and AGV segments',co:'co1',owner:'Yosi Balbul',timeline:'Q4 2026'},
-    {id:'su3',title:'Establish 3 strategic OEM partnerships with signed collaboration agreements',co:'co1',owner:'Yosi Balbul',timeline:'Q4 2026'},
-  ],
-  'Marketing':[
-    {id:'mk1',title:'Generate 30 qualified inbound leads per month from digital channels (web, LinkedIn, Google Ads)',co:'co1',owner:'Roni Kedar',timeline:'Q4 2026'},
-    {id:'mk2',title:'Complete full product launch package for TIM EthernetIP, Small MOT-HM, and New ZED (user manuals, safety docs, CE/UL docs, labels, packaging, part numbers, pricing, ERP/CRM setup, internal training)',co:'co2',owner:'Roni Kedar',timeline:'Q4 2026'},
-    {id:'mk3',title:'Build STXI brand positioning as leader in integrated motors for Medical, Decentralized Machines, and Packaging: identify 100 target companies, execute PR and content campaign',co:'co1',owner:'Roni Kedar',timeline:'Q4 2026'},
-    {id:'mk4',title:'Define 2027+ innovation roadmap with validated VOC inputs from minimum 10 customers across target segments',co:'co2',owner:'Roni Kedar',timeline:'Q2 2026'},
-  ],
-  'R&D':[
-    {id:'rd1',title:'Release TIM EthernetIP, Small MOT-HM, and New ZED to PT (Prototype) stage',co:'co2',owner:'Adi Kedar',timeline:'Q4 2026'},
-    {id:'rd2',title:'Develop and validate AI-based features in drives — AI Autotuning beta live with 3 pilot customers, demonstrating 60% reduction in commissioning time vs manual baseline',co:'co2',owner:'Adi Kedar',timeline:'Q3 2026'},
-    {id:'rd3',title:'Develop 2 custom projects for large OEMs completing full development cycle in 50% of standard time using AI-assisted simulation, automated testing, and design reuse tooling',co:'co2',owner:'Adi Kedar',timeline:'Q4 2026'},
-    {id:'rd4',title:'Reduce overall development cycle time by 50% through AI-assisted tools: simulation, automated regression testing (80% firmware coverage), AI-generated documentation drafts',co:'co4',owner:'Adi Kedar',timeline:'Q4 2026'},
-  ],
-  'Engineering':[
-    {id:'en1',title:'Complete CE, UL, and TÜV certification for all new 2026 products (TIM EthernetIP, Small MOT-HM, New ZED)',co:'co2',owner:'Einat Hertz',timeline:'Q4 2026'},
-    {id:'en2',title:'Support serial production ramp-up for 3 active customer programs with full FAI, ECO, and V-model X3 process compliance',co:'co3',owner:'Einat Hertz',timeline:'Q4 2026'},
-    {id:'en3',title:'Implement PDM system with AI-assisted part search and reuse recommendations, complete Data Center build-out, and finalize part number and labeling reclassification across full portfolio',co:'co4',owner:'Einat Hertz',timeline:'Q4 2026'},
-    {id:'en4',title:'Achieve 100% early technical involvement from project kickoff (pre-S02) on all new programs, and reduce first-pass engineering review failure rate to <10%',co:'co4',owner:'Einat Hertz',timeline:'Q4 2026'},
-  ],
-  'Operations':[
-    {id:'op1',title:'Achieve OTD 95% committed and 85% requested every quarter across all serial production orders',co:'co3',owner:'Elad Azraf',timeline:'Q4 2026'},
-    {id:'op2',title:'Reduce BOM cost by 10%, assembly cost by 5%, and freight cost by 10% vs 2025 baseline',co:'co3',owner:'Elad Azraf',timeline:'Q4 2026'},
-    {id:'op3',title:'Turn inventory 6 times per year and maintain 8.5+ customer satisfaction score on order handling',co:'co3',owner:'Elad Azraf',timeline:'Q4 2026'},
-    {id:'op4',title:'Qualify 2 external contract manufacturers globally as certified backup/overflow production sites',co:'co3',owner:'Elad Azraf',timeline:'Q4 2026'},
-    {id:'op5',title:'Automate repetitive operational tasks using Priority ERP: reduce production planning cycle from 5 days to 2 days, eliminate manual OTD and inventory spreadsheet reporting',co:'co4',owner:'Elad Azraf',timeline:'Q3 2026'},
-  ],
-  'Finance':[
-    {id:'fi1',title:'Achieve cash flow forecast accuracy of 90%+ using a rolling 13-week forecast model updated weekly',co:'co4',owner:'Eli Hoory',timeline:'Q4 2026'},
-    {id:'fi2',title:'Reduce DSO from ~75 days to 55 days through structured collections process — Q2: 70d / Q3: 63d / Q4: 55d',co:'co4',owner:'Eli Hoory',timeline:'Q4 2026'},
-    {id:'fi3',title:'Automate invoice entry, customer/supplier onboarding, and financial report generation using Priority ERP and AI tools — target 40% reduction in manual processing time',co:'co4',owner:'Eli Hoory',timeline:'Q3 2026'},
-    {id:'fi4',title:'Keep cash reserve above red-line target every month; achieve <5% variance on controllable expense lines vs annual budget',co:'co4',owner:'Eli Hoory',timeline:'Q4 2026'},
-  ],
-  'Quality':[
-    {id:'qu1',title:'Reduce field failure rate to <0.4% for all products under warranty',co:'co3',owner:'Ruth Shoshan',timeline:'Q4 2026'},
-    {id:'qu2',title:'Achieve first-pass yield ≥95% overall; per product: StepIM ≥96%, DIMD ≥95%, ServSD ≥80%',co:'co3',owner:'Ruth Shoshan',timeline:'Q4 2026'},
-    {id:'qu3',title:'Reduce STXi repair cycle time to <21 business days for all products manufactured by STXi',co:'co3',owner:'Ruth Shoshan',timeline:'Q4 2026'},
-    {id:'qu4',title:'Implement AI-assisted failure analysis and SPC dashboards with anomaly detection — reduce RMA analysis and reporting time by 50%',co:'co4',owner:'Ruth Shoshan',timeline:'Q3 2026'},
-  ],
-  'Tech Support':[
-    {id:'ts1',title:'Deploy AI-assisted first-response system resolving or routing 60% of incoming tickets without engineer intervention, reducing average first-response time from ~8h to 2h',co:'co4',owner:'Shachar Amir',timeline:'Q4 2026'},
-    {id:'ts2',title:'Build structured troubleshooting knowledge base covering 80% of recurring issue types, integrated with AI triage for self-service resolution',co:'co4',owner:'Shachar Amir',timeline:'Q4 2026'},
-    {id:'ts3',title:'Certify all Applications engineers on 2026 product portfolio including Functional Safety with Beckhoff',co:'co2',owner:'Shachar Amir',timeline:'Q3 2026'},
-    {id:'ts4',title:'Reduce ticket resolution time by 25% through structured triage, AI-assisted response drafting, and knowledge base routing',co:'co4',owner:'Shachar Amir',timeline:'Q4 2026'},
-  ],
-};
-
-// KPI defaults per dept obj
-const KPI = {
-  si1:{m:'Revenue growth % vs 2025',u:'%',b:0,t:30,a:8},
-  si2:{m:'Serial production agreements signed',u:'deals',b:0,t:8,a:2},
-  si3:{m:'New KUKA partner customers signed',u:'accounts',b:0,t:3,a:0},
-  sg1:{m:'New accounts at pre-serial stage',u:'accounts',b:0,t:3,a:1},
-  sg2:{m:'Qualified opportunities in new European markets',u:'opps',b:0,t:1,a:0},
-  sg3:{m:'DACH prospects with active account plan',u:'accounts',b:0,t:15,a:3},
-  sg4:{m:'Cybersecurity process implementation',u:'%',b:0,t:100,a:0},
-  su1:{m:'USA revenue growth % vs 2025',u:'%',b:0,t:35,a:0},
-  su2:{m:'Serial production pipeline value',u:'USD',b:0,t:1000000,a:200000},
-  su3:{m:'Signed OEM partnership agreements',u:'partnerships',b:0,t:3,a:0},
-  mk1:{m:'Qualified inbound leads per month',u:'leads/mo',b:10,t:30,a:12},
-  mk2:{m:'Launch deliverables completed per product',u:'%',b:0,t:100,a:20},
-  mk3:{m:'Target companies identified and in pipeline',u:'companies',b:0,t:100,a:10},
-  mk4:{m:'Customers with structured VOC documented',u:'customers',b:0,t:10,a:2},
-  rd1:{m:'Products reaching PT stage',u:'products',b:0,t:3,a:0},
-  rd2:{m:'Pilots with validated AI Autotuning',u:'pilots',b:0,t:3,a:1},
-  rd3:{m:'Custom OEM projects at 50% cycle time',u:'projects',b:0,t:2,a:0},
-  rd4:{m:'Development cycle time reduction vs baseline',u:'%',b:0,t:50,a:0},
-  en1:{m:'Products with full certification complete',u:'products',b:0,t:3,a:1},
-  en2:{m:'Programs at serial production readiness',u:'programs',b:0,t:3,a:1},
-  en3:{m:'PDM + Data Center + reclassification complete',u:'%',b:0,t:100,a:15},
-  en4:{m:'New programs with pre-S02 engineering involvement',u:'%',b:40,t:100,a:50},
-  op1:{m:'OTD committed rate',u:'%',b:90,t:95,a:92},
-  op2:{m:'BOM cost reduction vs baseline',u:'%',b:0,t:10,a:3},
-  op3:{m:'Inventory turns per year',u:'turns',b:4,t:6,a:4.5},
-  op4:{m:'Qualified external production sites',u:'sites',b:0,t:2,a:0},
-  op5:{m:'Production planning cycle time',u:'days',b:5,t:2,a:4},
-  fi1:{m:'Cash flow forecast accuracy',u:'%',b:70,t:90,a:73},
-  fi2:{m:'DSO in days',u:'days',b:75,t:55,a:72},
-  fi3:{m:'Manual processing time reduction',u:'%',b:0,t:40,a:5},
-  fi4:{m:'Months cash above red line',u:'of 12',b:0,t:12,a:3},
-  qu1:{m:'Field failure rate',u:'%',b:0.8,t:0.4,a:0.6},
-  qu2:{m:'Overall first-pass yield',u:'%',b:88,t:95,a:90},
-  qu3:{m:'Average repair cycle time',u:'days',b:30,t:21,a:27},
-  qu4:{m:'RMA analysis time reduction',u:'%',b:0,t:50,a:5},
-  ts1:{m:'Tickets resolved/routed without engineer',u:'%',b:0,t:60,a:5},
-  ts2:{m:'Recurring issue types in knowledge base',u:'%',b:20,t:80,a:25},
-  ts3:{m:'Engineers certified on 2026 portfolio + FuSa',u:'%',b:0,t:100,a:0},
-  ts4:{m:'Ticket resolution time reduction',u:'%',b:0,t:25,a:5},
-};
 
 // ═══ GOALS STATE ══════════════════════════════════════════════════
 let idc=3000; const nid=()=>++idc;
@@ -414,9 +314,40 @@ function deptPrg(g){ const lk=goals.filter(e=>e.type==='employee'&&e.dept===g.de
 function prg(g){ return g.type==='dept'?deptPrg(g):empPrg(g); }
 function coPrg(coid){ const dg=goals.filter(g=>g.type==='dept'&&g.companyObjId===coid); return dg.length?Math.round(dg.reduce((s,g)=>s+deptPrg(g),0)/dg.length):0; }
 function deptAvgPrg(dept){ const dg=goals.filter(g=>g.type==='dept'&&g.dept===dept); return dg.length?Math.round(dg.reduce((s,g)=>s+deptPrg(g),0)/dg.length):0; }
-
-function getCoById(id){ return COG.find(g=>g.id===id)||COG[0]; }
-
+let companyObjectives=[];
+function normCompanyObjective(raw,idx){
+  if(!raw) return null;
+  return {
+    id: raw.id || ('co_' + nid()),
+    label: (raw.label || 'Company objective').trim(),
+    title: (raw.title || raw.sub || raw.label || 'Untitled company objective').trim(),
+    color: raw.color || ['#E8220A','#2255CC','#2E7D32','#8A5A00','#A03D00','#00838F','#6A1B9A','#546E7A'][idx % 8]
+  };
+}
+function loadCompanyObjectives(saved, liveGoals){
+  var arr=(Array.isArray(saved)?saved:[]).map(normCompanyObjective).filter(Boolean);
+  var usedIds=[].concat((liveGoals||[]).map(function(g){return g.companyObjId;}).filter(Boolean));
+  usedIds.forEach(function(id){
+    if(!arr.some(function(co){return co.id===id;})){
+      var legacy=LEGACY_COMPANY_OBJECTIVES.find(function(co){return co.id===id;});
+      arr.push(normCompanyObjective(legacy||{id:id,label:id,title:id},arr.length));
+    }
+  });
+  return arr;
+}
+function getCoById(id){ return companyObjectives.find(function(g){return g.id===id;}) || null; }
+function getCoMeta(id){
+  return getCoById(id) || {label:'Unlinked',title:'',color:'var(--g300)'};
+}
+function companyObjectiveOptions(){
+  return companyObjectives.map(function(co){
+    return `<div class="co-opt${W.companyObjId===co.id?' sel':''}" onclick="W.companyObjId='${co.id}';rWiz()">
+      <div class="co-radio">${W.companyObjId===co.id?'<svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><polyline points="20 6 9 17 4 12"/></svg>':''}</div>
+      <div><div style="font-size:12px;font-weight:500;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${co.color}"></span>${co.label}</div>
+      <div style="font-size:11px;color:var(--g500);margin-top:2px">${tr(co.title,70)}</div></div>
+    </div>`;
+  }).join('');
+}
 let goals=[];
 
 // ═══ HELPERS ══════════════════════════════════════════════════════
@@ -475,7 +406,9 @@ function rDash(){
       <div class="pp">${p}%</div>
     </div>`;
   }).join('');
-  document.getElementById('db-co').innerHTML=COG.map(co=>{
+  document.getElementById('db-co').innerHTML=companyObjectives.length===0
+    ?'<div class="empty"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>No company objectives yet.</div>'
+    :companyObjectives.map(co=>{
     const p=coPrg(co.id);
     return `<div style="margin-bottom:16px">
       <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
@@ -484,7 +417,7 @@ function rDash(){
       </div>
       <div style="display:flex;align-items:flex-start;gap:12px">
         <div style="flex:1">
-          <div style="font-size:13px;font-weight:500;color:var(--bk);line-height:1.4;margin-bottom:5px">${co.sub}</div>
+          <div style="font-size:13px;font-weight:500;color:var(--bk);line-height:1.4;margin-bottom:5px">${co.title}</div>
           ${pbarcol(p,5,co.color)}
         </div>
         <div style="font-size:18px;font-weight:600;color:var(--bk);flex-shrink:0;min-width:42px;text-align:right">${p}%</div>
@@ -499,7 +432,9 @@ function rCompany(){
     `<button class="pill${coDeptFilter==='all'?' active':''}" onclick="setCoDept('all')">All departments</button>`+
     DEPTS.map(d=>`<button class="pill${coDeptFilter===d?' active':''}" onclick="setCoDept('${d.replace(/'/g,"\\'")}')">${d}</button>`).join('');
 
-  document.getElementById('co-content').innerHTML=COG.map(co=>{
+  document.getElementById('co-content').innerHTML=companyObjectives.length===0
+    ?`<div class="empty"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>No company objectives yet — add one to start linking department goals.</div>`
+    :companyObjectives.map(co=>{
     let dg=goals.filter(g=>g.type==='dept'&&g.companyObjId===co.id);
     if(coDeptFilter!=='all') dg=dg.filter(g=>g.dept===coDeptFilter);
     if(coDeptFilter!=='all'&&dg.length===0) return '';
@@ -515,7 +450,11 @@ function rCompany(){
             </div>
             <div style="font-size:12px;font-weight:600;color:var(--bk);line-height:1.5;padding-left:18px">${co.title}</div>
           </div>
-          <div style="font-size:13px;font-weight:600;color:var(--bk);flex-shrink:0">${p}%</div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0" onclick="event.stopPropagation()">
+            <div style="font-size:13px;font-weight:600;color:var(--bk)">${p}%</div>
+            <span class="ibtn" style="width:24px;height:24px" onclick="openCompanyModal('${co.id}')" title="Edit company objective"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><path d="M7 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1"/><path d="M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97L9 12v3h3l8.385-8.415z"/></svg></span>
+            <span class="ibtn del" style="width:24px;height:24px" onclick="deleteCompanyObjective('${co.id}')" title="Delete company objective"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg></span>
+          </div>
         </div>
         <div style="margin-top:8px">${pbarcol(p,5,co.color)}</div>
       </div>
@@ -560,6 +499,56 @@ function togPanel(uid){
 }
 
 // ═══ MY GOALS ═════════════════════════════════════════════════════
+function openCompanyModal(id){
+  var co=id?getCoById(id):null;
+  var colors=['#E8220A','#2255CC','#2E7D32','#8A5A00','#A03D00','#00838F','#6A1B9A','#546E7A'];
+  document.getElementById('company-modal-title').textContent=co?'Edit company objective':'Add company objective';
+  document.getElementById('company-body').innerHTML=`
+    <div class="fg"><div class="fl">Short label</div><input class="fi" id="co-label" type="text" maxlength="24" placeholder="e.g. Growth" value="${co?(co.label||'').replace(/"/g,'&quot;'):''}"></div>
+    <div class="fg"><div class="fl">Objective title</div><textarea class="fi" id="co-title" rows="3" placeholder="What should this company objective achieve?">${co?(co.title||'').replace(/</g,'&lt;'):''}</textarea></div>
+    <div class="fg"><div class="fl">Color</div><div style="display:flex;gap:8px;flex-wrap:wrap">${colors.map(function(color){
+      var selected=(co?co.color:colors[companyObjectives.length%colors.length])===color;
+      return `<button class="ibtn" type="button" onclick="selectCompanyColor('${color}')" data-color="${color}" style="width:28px;height:28px;background:${color};border-color:${selected?color:'var(--g200)'}"></button>`;
+    }).join('')}</div><input type="hidden" id="co-color" value="${co?co.color:colors[companyObjectives.length%colors.length]}"></div>
+    <input type="hidden" id="co-id" value="${co?co.id:''}">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="btn" onclick="closeCompanyModal()">Cancel</button>
+      <button class="btn btnp" onclick="saveCompanyObjective()"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><polyline points="20 6 9 17 4 12"/></svg>Save</button>
+    </div>`;
+  document.getElementById('company-modal').classList.add('open');
+}
+function selectCompanyColor(color){
+  document.getElementById('co-color').value=color;
+  document.querySelectorAll('#company-body [data-color]').forEach(function(btn){
+    btn.style.borderColor=btn.getAttribute('data-color')===color?color:'var(--g200)';
+  });
+}
+function saveCompanyObjective(){
+  var id=document.getElementById('co-id').value;
+  var label=((document.getElementById('co-label')||{}).value||'').trim();
+  var title=((document.getElementById('co-title')||{}).value||'').trim();
+  var color=((document.getElementById('co-color')||{}).value||'').trim() || '#E8220A';
+  if(!label||!title){ alert('Please enter both label and objective title.'); return; }
+  if(id){
+    var existing=getCoById(id); if(!existing) return;
+    existing.label=label; existing.title=title; existing.color=color;
+  } else {
+    companyObjectives.push({id:'co_' + nid(),label:label,title:title,color:color});
+  }
+  closeCompanyModal(); refresh(); autoSave();
+}
+function deleteCompanyObjective(id){
+  if(goals.some(function(g){return g.type==='dept'&&g.companyObjId===id;})){
+    alert('This company objective is still linked to department goals. Reassign or delete those department goals first.');
+    return;
+  }
+  if(!confirm('Delete this company objective?')) return;
+  companyObjectives=companyObjectives.filter(function(co){return co.id!==id;});
+  refresh(); autoSave();
+}
+function closeCompanyModal(){ document.getElementById('company-modal').classList.remove('open'); }
+document.getElementById('company-modal').addEventListener('click',function(e){if(e.target===this)closeCompanyModal();});
+
 function rMy(){
   const me=currentUserName();
   const mine=goals.filter(g=>samePerson(g.owner,me));
@@ -593,7 +582,7 @@ function rDeptContent(){
     const lk=goals.filter(g=>g.type==='employee'&&g.dept===AD&&g.deptObj===dgo.title);
     const ot=lk.filter(isOT).length, p=deptPrg(dgo), uid='dv_'+dgo.id;
     const isOpen=dvOpen[uid]===true;
-    const co=getCoById(dgo.companyObjId);
+    const co=getCoMeta(dgo.companyObjId);
 
     return `<div class="dv-dept-obj${isOpen?' open':''}" id="dvb-${uid}">
       <div class="dv-dept-obj-head" onclick="togDv('${uid}')">
@@ -695,7 +684,7 @@ let gcxOpen={};
 function gcard(g,opts={}){
   const p=prg(g);
   const ec=goals.filter(e=>e.type==='employee'&&e.deptObj===g.title&&e.dept===g.dept).length;
-  const co=getCoById(g.companyObjId);
+  const co=getCoMeta(g.companyObjId);
   const doLine=opts.showDeptObj&&g.type==='employee'&&g.deptObj
     ?`<div class="gc-deptobj" title="${g.deptObj}">↳ ${tr(g.deptObj,72)}</div>`:'';
   const whoRow=`<div class="gc-who">${ownerAv(g.owner)}<span style="font-size:12px;font-weight:500;color:var(--g700)">${g.owner}</span>${g.createdBy&&g.createdBy!==g.owner?'<span style="font-size:10px;color:var(--g400)">Created by '+g.createdBy+'</span>':''}${g.type==='dept'?'<span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;background:#EEF4FF;color:var(--blue);border:1px solid rgba(34,85,204,.2)">Dept objective</span>':'<span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;background:var(--red-l);color:var(--red);border:1px solid rgba(232,34,10,.2)">Employee goal</span>'}${dtag(g.dept)}<span class="meta"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><rect x="4" y="5" width="16" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="4" y1="11" x2="20" y2="11"/></svg>${g.from} – ${g.to}</span>${g.type==='dept'?`<span class="meta"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.85"/></svg>${ec} emp. goal${ec!==1?'s':''}</span>`:''}</div>`;
@@ -825,7 +814,7 @@ function doAssign(deptGoalId){
     measurement:g.measurement, unit:g.unit, baseline:g.baseline,
     target:g.target, actual:g.baseline, from:g.from, to:g.to,
     owner:empName, deptObj:g.title, companyObjId:g.companyObjId,
-    status:'Draft', notes:'', createdBy:WHO||'Team',
+    status:'Draft', notes:'', createdBy:currentUserName(),
     createdAt:new Date().toISOString()
   });
   document.getElementById('assign-modal').remove();
@@ -841,9 +830,7 @@ function initW(dept,deptObjTitle){
     suggestions:[],selIdx:-1,_fetching:false,smartResult:null};
   if(deptObjTitle){
     const liveObj=goals.find(function(g){return g.type==='dept'&&g.dept===dept&&g.title===deptObjTitle;});
-    const staticObj=(DO[dept]||[]).find(o=>o.title===deptObjTitle);
-    const obj=liveObj||staticObj;
-    if(obj) W.companyObjId=liveObj?liveObj.companyObjId:(obj.co||'');
+    if(liveObj) W.companyObjId=liveObj.companyObjId||'';
   }
 }
 function openWizard(dept,deptObjTitle){
@@ -877,10 +864,14 @@ function rWiz(){
 
 function rS0(){
   if(W.goalType==='employee'){
-    const dObjs=goals.filter(function(g){return g.dept===W.dept&&g.type==='dept';}).concat(DO[W.dept]||[]).filter(function(o,i,arr){return arr.findIndex(function(x){return x.title===o.title;})===i;});
-    const selObj=goals.find(function(g){return g.type==='dept'&&g.dept===W.dept&&g.title===W.deptObj;})||dObjs.find(o=>o.title===W.deptObj);
-    const apHtml=selObj?`<div class="aprev show"><div class="aprev-lbl">Supports company objective</div><div style="display:flex;align-items:center;gap:4px;margin-top:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${getCoById(selObj.co).color}"></span><span style="font-size:12px;font-weight:500">${getCoById(selObj.co).label}</span></div></div>`
+    const dObjs=goals.filter(function(g){return g.dept===W.dept&&g.type==='dept';});
+    const selObj=goals.find(function(g){return g.type==='dept'&&g.dept===W.dept&&g.title===W.deptObj;});
+    const selCo=selObj?getCoMeta(selObj.companyObjId):null;
+    const apHtml=selObj&&selCo?`<div class="aprev show"><div class="aprev-lbl">Supports company objective</div><div style="display:flex;align-items:center;gap:4px;margin-top:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${selCo.color}"></span><span style="font-size:12px;font-weight:500">${selCo.label}</span></div></div>`
       :`<div class="aprev" id="aprev-box"><div class="aprev-lbl">Supports company objective</div><div id="aprev-chain"></div></div>`;
+    if(dObjs.length===0){
+      return `<div class="empty"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>No department objectives yet for ${W.dept}. Create one first.</div>`;
+    }
     return `<div class="fg"><div class="fl">Department</div>
         <select class="fs" id="w-dept" onchange="wDeptCh()">${DEPTS.map(d=>`<option ${d===W.dept?'selected':''}>${d}</option>`).join('')}</select></div>
       <div class="fg"><div class="fl">Which department objective does this support?</div>
@@ -891,14 +882,13 @@ function rS0(){
         <button class="btn btnp" onclick="wN0Emp()">Continue <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
       </div>`;
   } else {
+    if(companyObjectives.length===0){
+      return `<div class="empty"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>No company objectives yet — add one from the Company objectives page first.</div>`;
+    }
     return `<div class="fg"><div class="fl">Department</div>
         <select class="fs" id="w-dept" onchange="wDeptCh()">${DEPTS.map(d=>`<option ${d===W.dept?'selected':''}>${d}</option>`).join('')}</select></div>
       <div class="fg"><div class="fl">Which company objective does this support?</div>
-        ${COG.map(co=>`<div class="co-opt${W.companyObjId===co.id?' sel':''}" onclick="W.companyObjId='${co.id}';rWiz()">
-          <div class="co-radio">${W.companyObjId===co.id?'<svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><polyline points="20 6 9 17 4 12"/></svg>':''}</div>
-          <div><div style="font-size:12px;font-weight:500;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${co.color}"></span>${co.label}</div>
-          <div style="font-size:11px;color:var(--g500);margin-top:2px">${tr(co.title,70)}</div></div>
-        </div>`).join('')}
+        ${companyObjectiveOptions()}
       </div>
       <div style="display:flex;justify-content:flex-end;margin-top:4px">
         <button class="btn btnp" onclick="wN0Dept()">Continue <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
@@ -907,7 +897,7 @@ function rS0(){
 }
 
 function rS1(){
-  const co=getCoById(W.companyObjId);
+  const co=getCoMeta(W.companyObjId);
   const sumBar=W.goalType==='employee'
     ?`<div class="sumbar"><div style="font-size:10px;color:var(--g500);margin-bottom:4px">Supporting</div>
        <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${co.color}"></span><span style="font-size:12px;font-weight:500">${co.label}</span><span style="font-size:11px;color:var(--g500)">→ ${tr(W.deptObj,50)}</span></div></div>`
@@ -947,7 +937,7 @@ function renderSmart(sr){
 }
 
 function rS2(){
-  const co=getCoById(W.companyObjId);
+  const co=getCoMeta(W.companyObjId);
   return `<div class="sumbar" style="margin-bottom:16px"><div style="font-size:13px;font-weight:500;margin-bottom:4px">${W.title}</div>
     <div style="font-size:11px;color:var(--g500);display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${co.color}"></span>${co.label}${W.deptObj?' · '+tr(W.deptObj,40):''}</div></div>
   <div class="fg"><div class="fl">How will you measure success?</div><input class="fi" id="w-metric" type="text" placeholder="e.g. Signed contracts" value="${W.measurement}"></div>
@@ -975,13 +965,11 @@ function rS3(){
 function wDeptCh(){ W.dept=document.getElementById('w-dept').value; W.deptObj=''; W.companyObjId=''; W.suggestions=[]; W._fetching=false; rWiz(); }
 function wDoCh(){
   const v=document.getElementById('w-do').value; W.deptObj=v;
-  const liveObj=goals.find(function(g){return g.type==='dept'&&g.dept===W.dept&&g.title===v;});
-  const staticObj=(DO[W.dept]||[]).find(o=>o.title===v);
-  const obj=liveObj||staticObj;
-  W.companyObjId=obj?(liveObj?liveObj.companyObjId:obj.co):'';
+  const obj=goals.find(function(g){return g.type==='dept'&&g.dept===W.dept&&g.title===v;});
+  W.companyObjId=obj?obj.companyObjId:'';
   const box=document.getElementById('aprev-box'),chain=document.getElementById('aprev-chain');
-  if(box&&chain&&obj){
-    const co=getCoById(obj.co);
+  if(box&&chain&&obj&&W.companyObjId){
+    const co=getCoMeta(W.companyObjId);
     chain.innerHTML=`<div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${co.color}"></span><span style="font-size:12px;font-weight:500">${co.label}</span></div>`;
     box.classList.add('show');
   } else if(box) box.classList.remove('show');
@@ -1017,16 +1005,15 @@ function getFallback(){
   const isEmp=W.goalType==='employee';
   const dept=W.dept;
   if(isEmp){
-    const doid=(function(){ var _o=(DO[dept]||[]).find(function(o){return o.title===W.deptObj;}); return _o?_o.id:null; })();
-    const k=KPI[doid]||{m:'KPI',u:'%',b:0,t:100};
-    const co=getCoById(W.companyObjId);
+    const deptGoal=goals.find(function(g){return g.type==='dept'&&g.dept===dept&&g.title===W.deptObj;})||{measurement:'KPI',unit:'%',baseline:0,target:100};
+    const co=getCoMeta(W.companyObjId);
     return [
-      {title:`Achieve first milestone for "${tr(W.deptObj,45)}" by Q3`,measurement:k.m,unit:k.u,baseline:k.b,target:Math.round((k.b+k.t)/2)},
-      {title:`Reach full target for "${tr(W.deptObj,45)}" by Q4`,measurement:k.m,unit:k.u,baseline:k.b,target:k.t},
-      {title:`Deliver 75% of planned outcomes for "${tr(W.deptObj,40)}" with measurable results`,measurement:k.m,unit:k.u,baseline:k.b,target:Math.round(k.t*0.75)},
+      {title:`Achieve first milestone for "${tr(W.deptObj,45)}" by Q3`,measurement:deptGoal.measurement,unit:deptGoal.unit||'%',baseline:Number(deptGoal.baseline||0),target:Math.round((Number(deptGoal.baseline||0)+Number(deptGoal.target||100))/2)},
+      {title:`Reach full target for "${tr(W.deptObj,45)}" by Q4`,measurement:deptGoal.measurement,unit:deptGoal.unit||'%',baseline:Number(deptGoal.baseline||0),target:Number(deptGoal.target||100)},
+      {title:`Deliver 75% of planned outcomes for "${tr(W.deptObj,40)}" with measurable results`,measurement:deptGoal.measurement,unit:deptGoal.unit||'%',baseline:Number(deptGoal.baseline||0),target:Math.round(Number(deptGoal.target||100)*0.75)},
     ];
   } else {
-    const co=getCoById(W.companyObjId);
+    const co=getCoMeta(W.companyObjId);
     return [
       {title:`${dept}: achieve first measurable outcome supporting "${co.label}" by Q3`,measurement:'Milestone completion',unit:'%',baseline:0,target:50},
       {title:`${dept}: deliver full impact on "${co.label}" by Q4`,measurement:'Objective completion',unit:'%',baseline:0,target:100},
@@ -1038,7 +1025,7 @@ function getFallback(){
 async function fetchSugg(){
   const isEmp=W.goalType==='employee';
   const fallback=getFallback();
-  const co=getCoById(W.companyObjId);
+  const co=getCoMeta(W.companyObjId);
   const prompt=isEmp
     ?`OKR coach for STXI Motion (motion control). Dept: ${W.dept}. Dept objective: "${W.deptObj}". Company objective: "${co.label}: ${co.title}". Generate 3 specific SMART employee goals directly serving this dept objective. JSON only: {"goals":[{"title":"","measurement":"","unit":"","baseline":0,"target":100,"from":"Q2 2026","to":"Q4 2026"}]}`
     :`OKR coach for STXI Motion (motion control). Company objective: "${co.label}: ${co.title}". Dept: ${W.dept}. Suggest 3 specific SMART dept objectives supporting this company objective. JSON only: {"goals":[{"title":"","measurement":"","unit":"","baseline":0,"target":100,"from":"Q2 2026","to":"Q4 2026"}]}`;
@@ -1060,7 +1047,7 @@ async function runSmart(){
   const btn=document.getElementById('smart-btn'),panel=document.getElementById('smart-panel');
   if(!btn||!panel)return;
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Checking…';
-  const co=getCoById(W.companyObjId);
+  const co=getCoMeta(W.companyObjId);
   const prompt=`Evaluate this goal as SMART for a ${W.dept} team member at STXI Motion: "${txt}". Context: "${W.deptObj||co.title}". For each SMART letter: one sentence assessment + ok:true/false. JSON only: {"S":{"ok":true,"comment":""},"M":{"ok":true,"comment":""},"A":{"ok":true,"comment":""},"R":{"ok":true,"comment":""},"T":{"ok":true,"comment":""}}`;
   try{
     const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -1080,7 +1067,8 @@ async function runSmart(){
 // ═══ EDIT MODAL ═══════════════════════════════════════════════════
 function openEdit(id){
   const g=goals.find(g=>g.id===id); if(!g)return;
-  const dObjs=DO[g.dept]||[];
+  const dObjs=goals.filter(function(goal){return goal.type==='dept'&&goal.dept===g.dept;});
+  const companySelect=`<div class="fg"><div class="fl">Company objective</div><select class="fs" id="e-co">${companyObjectives.map(function(co){return `<option value="${co.id}" ${co.id===g.companyObjId?'selected':''}>${co.label} — ${tr(co.title,70)}</option>`;}).join('')}</select></div>`;
   document.getElementById('edit-body').innerHTML=`
     <div class="fg"><div class="fl">Title</div><input class="fi" id="e-t" value="${g.title.replace(/"/g,'&quot;')}"></div>
     <div class="fg"><div class="fl">Measurement / KPI</div><input class="fi" id="e-m" value="${g.measurement}"></div>
@@ -1088,12 +1076,13 @@ function openEdit(id){
     <div class="tc"><div class="fg"><div class="fl">Baseline</div><input class="fi" id="e-b" type="number" value="${g.baseline}"></div><div class="fg"><div class="fl">Target</div><input class="fi" id="e-tg" type="number" value="${g.target}"></div></div>
     <div class="fg"><div class="fl">Current actual</div><input class="fi" id="e-a" type="number" value="${g.actual}"></div>
     <div class="tc"><div class="fg"><div class="fl">From</div><select class="fs" id="e-from">${QS.map(q=>`<option ${q===g.from?'selected':''}>${q}</option>`).join('')}</select></div><div class="fg"><div class="fl">To</div><select class="fs" id="e-to">${QS.map(q=>`<option ${q===g.to?'selected':''}>${q}</option>`).join('')}</select></div></div>
+    ${g.type==='dept'?companySelect:''}
     ${g.type==='employee'?`<div class="fg"><div class="fl">Department objective</div>
       <select class="fs" id="e-do" onchange="eDoChg(${g.id})">
         ${dObjs.map(o=>`<option ${o.title===g.deptObj?'selected':''}>${o.title}</option>`).join('')}
       </select></div>
     <div id="e-ap">
-      ${(()=>{const co=getCoById(g.companyObjId);return `<div style="display:flex;align-items:center;gap:5px;padding:6px 0;font-size:12px;color:var(--g500)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${co.color}"></span>${co.label}</div>`;})()}
+      ${(()=>{const co=getCoMeta(g.companyObjId);return `<div style="display:flex;align-items:center;gap:5px;padding:6px 0;font-size:12px;color:var(--g500)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${co.color}"></span>${co.label}</div>`;})()}
     </div>`:''}
     <div class="fg"><div class="fl">Owner</div><input class="fi" id="e-ow" type="text" value="${g.owner||''}"></div>
     <input type="hidden" id="e-id" value="${g.id}">
@@ -1104,13 +1093,14 @@ function openEdit(id){
   document.getElementById('edit-modal').classList.add('open');
 }
 function euU(u){ document.getElementById('e-u').value=u; document.getElementById('eu-pct').classList.toggle('active',u==='%'); document.getElementById('eu-num').classList.toggle('active',u!=='%'); }
-function eDoChg(gid){ const g=goals.find(g=>g.id===gid); if(!g)return; const v=document.getElementById('e-do').value; const obj=(DO[g.dept]||[]).find(o=>o.title===v); if(obj){g.companyObjId=obj.co;const co=getCoById(obj.co);document.getElementById('e-ap').innerHTML=`<div style="display:flex;align-items:center;gap:5px;padding:6px 0;font-size:12px;color:var(--g500)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${co.color}"></span>${co.label}</div>`;} }
+function eDoChg(gid){ const g=goals.find(g=>g.id===gid); if(!g)return; const v=document.getElementById('e-do').value; const obj=goals.find(function(goal){return goal.type==='dept'&&goal.dept===g.dept&&goal.title===v;}); if(obj){g.companyObjId=obj.companyObjId;const co=getCoMeta(obj.companyObjId);document.getElementById('e-ap').innerHTML=`<div style="display:flex;align-items:center;gap:5px;padding:6px 0;font-size:12px;color:var(--g500)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${co.color}"></span>${co.label}</div>`;} }
 function saveEdit(){
   const id=Number(document.getElementById('e-id').value),g=goals.find(g=>g.id===id); if(!g)return;
   g.title=document.getElementById('e-t').value; g.measurement=document.getElementById('e-m').value; g.unit=document.getElementById('e-u').value;
   g.baseline=Number(document.getElementById('e-b').value); g.target=Number(document.getElementById('e-tg').value); g.actual=Number(document.getElementById('e-a').value);
   g.from=document.getElementById('e-from').value; g.to=document.getElementById('e-to').value;
-  const de=document.getElementById('e-do'); if(de){g.deptObj=de.value;const obj=(DO[g.dept]||[]).find(o=>o.title===de.value);if(obj)g.companyObjId=obj.co;}
+  const eco=document.getElementById('e-co'); if(eco) g.companyObjId=eco.value;
+  const de=document.getElementById('e-do'); if(de){g.deptObj=de.value;const obj=goals.find(function(goal){return goal.type==='dept'&&goal.dept===g.dept&&goal.title===de.value;});if(obj)g.companyObjId=obj.companyObjId;}
   var ow=document.getElementById('e-ow'); if(ow&&ow.value.trim()) g.owner=normName(ow.value);
   closeEdit(); refresh(); autoSave();
 }
@@ -1141,12 +1131,13 @@ function spLoad(){
     if(xhr.status === 200){
       try {
         var data = JSON.parse(xhr.responseText);
-        if(data.goals && data.goals.length){
-          goals = data.goals;
-          var maxId = Math.max.apply(null, data.goals.map(function(g){return g.id||0;}).concat([idc]));
+        goals = Array.isArray(data.goals) ? data.goals : [];
+        companyObjectives = loadCompanyObjectives(data.companyObjectives, goals);
+        if(goals.length){
+          var maxId = Math.max.apply(null, goals.map(function(g){return g.id||0;}).concat([idc]));
           idc = maxId + 1;
-          refresh();
         }
+        refresh();
         var meta = data._meta || {};
         updateBadge(meta.lastSavedAt, meta.lastSavedBy, false);
         showToast("✓ Connected");
@@ -1159,12 +1150,12 @@ function spLoad(){
 
 function loadFallback(){
   var raw = localStorage.getItem("stxi_goals_backup");
-  if(raw){ try{ var d=JSON.parse(raw); if(d.goals){goals=d.goals;refresh();} showToast("Offline — local backup"); }catch(e){} }
+  if(raw){ try{ var d=JSON.parse(raw); goals=Array.isArray(d.goals)?d.goals:[]; companyObjectives=loadCompanyObjectives(d.companyObjectives,goals); refresh(); showToast("Offline — local backup"); }catch(e){} }
 }
 
 function spWrite(){
   var now = new Date().toISOString();
-  var payload = { _meta:{version:"1.0",app:"STXI Goals 2026",lastSavedBy:WHO,lastSavedAt:now}, goals:goals.map(function(g){return Object.assign({},g);}) };
+  var payload = { _meta:{version:"1.0",app:"STXI Goals 2026",lastSavedBy:WHO,lastSavedAt:now}, companyObjectives:companyObjectives.map(function(co){return Object.assign({},co);}), goals:goals.map(function(g){return Object.assign({},g);}) };
   var body = JSON.stringify(payload);
   var xhr = new XMLHttpRequest();
   xhr.open("POST", API_URL, true);
