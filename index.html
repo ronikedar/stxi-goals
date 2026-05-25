@@ -457,6 +457,25 @@ const isOT=g=>prg(g)>=40;
 function hpill(ot,tot){ if(!tot)return '<span class="health hgr">No goals yet</span>'; const p=Math.round(ot/tot*100); return `<span class="health ${p>=70?'hg':p>=40?'ha':'hr'}"><svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="currentColor" style="display:inline-block;vertical-align:-1px"><circle cx="12" cy="12" r="9"/></svg>${ot}/${tot} on track</span>`; }
 function ownerAv(name){ return `<span class="oav">${(name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</span>`; }
 const dtag=d=>`<span class="dtag">${d}</span>`;
+function normName(name){
+  return (name||'')
+    .trim()
+    .replace(/\s+/g,' ')
+    .toLowerCase()
+    .replace(/\b\w/g,function(c){ return c.toUpperCase(); });
+}
+function currentUserName(){ return normName(WHO||CU||'Team'); }
+function samePerson(a,b){ return normName(a)===normName(b); }
+function syncUserUi(){
+  var name = currentUserName();
+  var av = document.getElementById('user-av-initials');
+  var nm = document.getElementById('user-display-name');
+  if(av && name !== 'Team'){
+    var parts = name.split(' ');
+    av.textContent = (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+  }
+  if(nm) nm.textContent = name;
+}
 
 // ═══ NAV ══════════════════════════════════════════════════════════
 let AP='dashboard', returnPage='my', coDeptFilter='all';
@@ -569,8 +588,9 @@ function togPanel(uid){
 
 // ═══ MY GOALS ═════════════════════════════════════════════════════
 function rMy(){
-  const mine=goals.filter(g=>g.owner.toLowerCase()===CU.toLowerCase());
-  document.getElementById('my-sub').textContent=`${CU} · ${mine.length} goal${mine.length!==1?'s':''}`;
+  const me=currentUserName();
+  const mine=goals.filter(g=>samePerson(g.owner,me));
+  document.getElementById('my-sub').textContent=`${me} · ${mine.length} goal${mine.length!==1?'s':''}`;
   document.getElementById('my-list').innerHTML=mine.length===0
     ?`<div class="empty"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>No goals yet — use "Add goal" to create one.</div>`
     :mine.map(g=>gcard(g,{showDeptObj:true,act:true})).join('');
@@ -776,7 +796,8 @@ function createEmpFromDept(deptGoalId){
   var nameInp = document.createElement('input');
   nameInp.id = 'assign-name';
   nameInp.type = 'text';
-  nameInp.placeholder = 'e.g. Ido Zohar';
+  nameInp.placeholder = 'e.g. John Jones';
+  nameInp.value = currentUserName() !== 'Team' ? currentUserName() : '';
   nameInp.className = 'fi';
   nameInp.style.cssText = 'margin-bottom:14px;font-size:13px;display:block;width:100%';
   box.appendChild(nameInp);
@@ -823,7 +844,7 @@ function doAssign(deptGoalId){
   if(!g) return;
   var nameEl = document.getElementById('assign-name');
   var titleEl = document.getElementById('assign-title');
-  var empName = (nameEl ? nameEl.value.trim() : '').replace(/\b\w/g,function(c){return c.toUpperCase();});
+  var empName = normName(nameEl ? nameEl.value : '');
   var empTitle = titleEl ? titleEl.value.trim() : g.title;
   if(!empName){ nameEl.style.borderColor='var(--red)'; return; }
   goals.push({
@@ -843,7 +864,7 @@ function doAssign(deptGoalId){
 let W={};
 function initW(dept,deptObjTitle){
   W={step:0,goalType:'employee',dept:dept||DEPTS[0],deptObj:deptObjTitle||'',companyObjId:'',
-    unit:'%',title:'',measurement:'',baseline:0,target:100,from:'Q2 2026',to:'Q4 2026',
+    unit:'%',title:'',measurement:'',baseline:0,target:100,from:'Q2 2026',to:'Q4 2026',owner:currentUserName(),
     suggestions:[],selIdx:-1,_fetching:false,smartResult:null};
   if(deptObjTitle){
     const liveObj=goals.find(function(g){return g.type==='dept'&&g.dept===dept&&g.title===deptObjTitle;});
@@ -967,6 +988,7 @@ function rS2(){
 
 function rS3(){
   return `<div class="sumbar" style="margin-bottom:16px"><div style="font-size:13px;font-weight:500">${W.title}</div><div style="font-size:11px;color:var(--g500);margin-top:3px">${W.measurement} · ${W.baseline} → ${W.target} ${W.unit}</div></div>
+  ${W.goalType==='employee'?`<div class="fg"><div class="fl">Owner</div><input class="fi" id="w-owner" type="text" placeholder="e.g. John Jones" value="${(W.owner||'').replace(/"/g,'&quot;')}"></div>`:''}
   <div class="tc">
     <div class="fg"><div class="fl">Start quarter</div><select class="fs" id="w-from">${QS.map(q=>`<option ${q===W.from?'selected':''}>${q}</option>`).join('')}</select></div>
     <div class="fg"><div class="fl">End quarter</div><select class="fs" id="w-to">${QS.map(q=>`<option ${q===W.to?'selected':''}>${q}</option>`).join('')}</select></div>
@@ -1004,11 +1026,15 @@ function selSug(i){
 function wN1(){ const t=((document.getElementById('w-title')||{}).value||'').trim(); if(!t){alert('Please enter a goal title.');return;} W.title=t; if(W.selIdx>=0&&!W.measurement){const s=W.suggestions[W.selIdx];W.measurement=s.measurement;W.unit=s.unit||'%';W.baseline=Number(s.baseline||0);W.target=Number(s.target||100);} W.step=2; rWiz(); }
 function wN2(){ const m=((document.getElementById('w-metric')||{}).value||'').trim(); if(!m){alert('Please enter a measurement.');return;} W.measurement=m; W.baseline=Number(document.getElementById('w-base').value); W.target=Number(document.getElementById('w-target').value); W.step=3; rWiz(); }
 function wSave(){
+  if(W.goalType==='employee'){
+    W.owner=normName((document.getElementById('w-owner')||{}).value||'');
+    if(!W.owner){alert('Please enter an owner.');return;}
+  }
   W.from=document.getElementById('w-from').value; W.to=document.getElementById('w-to').value;
   goals.push({id:nid(),type:W.goalType,dept:W.dept,title:W.title,measurement:W.measurement,unit:W.unit,
     baseline:W.baseline,target:W.target,actual:W.baseline,from:W.from,to:W.to,
-    owner:WHO||CU,deptObj:W.goalType==='dept'?'':W.deptObj,companyObjId:W.companyObjId,
-    status:'Draft',notes:'',createdBy:WHO||CU,createdAt:new Date().toISOString()});
+    owner:W.goalType==='employee'?W.owner:currentUserName(),deptObj:W.goalType==='dept'?'':W.deptObj,companyObjId:W.companyObjId,
+    status:'Draft',notes:'',createdBy:currentUserName(),createdAt:new Date().toISOString()});
   closeWiz(); nav(returnPage); autoSave();
 }
 
@@ -1112,7 +1138,7 @@ function saveEdit(){
   g.baseline=Number(document.getElementById('e-b').value); g.target=Number(document.getElementById('e-tg').value); g.actual=Number(document.getElementById('e-a').value);
   g.from=document.getElementById('e-from').value; g.to=document.getElementById('e-to').value;
   const de=document.getElementById('e-do'); if(de){g.deptObj=de.value;const obj=(DO[g.dept]||[]).find(o=>o.title===de.value);if(obj)g.companyObjId=obj.co;}
-  var ow=document.getElementById('e-ow'); if(ow&&ow.value.trim()) g.owner=ow.value.trim();
+  var ow=document.getElementById('e-ow'); if(ow&&ow.value.trim()) g.owner=normName(ow.value);
   closeEdit(); refresh(); autoSave();
 }
 function closeEdit(){ document.getElementById('edit-modal').classList.remove('open'); }
@@ -1126,17 +1152,13 @@ var API_URL = "https://stxi-goals-api-d3gvf6d7a4b3e8az.israelcentral-01.azureweb
 var _saveTimer = null;
 var WHO = localStorage.getItem("stxi_who") || "";
 if(!WHO){
-  var rawName = window.prompt("Enter your first and last name (e.g. Ido Zohar):") || "Team";
-  WHO = rawName.replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+  var rawName = window.prompt("Enter your first and last name (e.g. John Jones):") || "Team";
+  WHO = normName(rawName);
   localStorage.setItem("stxi_who", WHO);
-  var _av = document.getElementById("user-av-initials");
-  var _nm = document.getElementById("user-display-name");
-  if(_av && WHO !== "Team"){
-    var parts = WHO.trim().split(" ");
-    _av.textContent = (parts[0][0] + (parts[1] ? parts[1][0] : "")).toUpperCase();
-  }
-  if(_nm) _nm.textContent = WHO;
 }
+WHO = normName(WHO || "Team");
+localStorage.setItem("stxi_who", WHO);
+syncUserUi();
 
 function spLoad(){
   badge("Loading…", "var(--g400)");
