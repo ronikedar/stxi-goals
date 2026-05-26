@@ -355,6 +355,10 @@ const CU='Roni Kedar';
 const bc=s=>s==='Approved'?'ba':'bd';
 const tr=(s,n)=>s&&s.length>n?s.slice(0,n)+'…':(s||'');
 const fv=(v,u)=>u==='USD'?'$'+Number(v).toLocaleString():Number(v)+(u&&u!=='number'?' '+u:'');
+function startsWithActionVerb(txt){
+  var clean=((txt||'').trim()).replace(/^["'“”‘’\-\s]+/,'');
+  return /^(achieve|acquire|advance|analyze|automate|build|certify|close|complete|create|define|deliver|deploy|design|develop|drive|establish|execute|expand|generate|grow|identify|improve|implement|increase|launch|lead|optimize|qualify|reduce|release|support|train|turn)/i.test(clean);
+}
 function pbar(p,h=6){ return `<div class="pbar-wrap" style="height:${h}px"><div class="pbar-fill" style="height:100%;width:${p}%"></div></div>`; }
 function pbarcol(p,h,col){ return `<div class="pbar-wrap" style="height:${h}px"><div class="pbar-fill" style="height:100%;width:${p}%;background:${col}"></div></div>`; }
 const isOT=g=>prg(g)>=40;
@@ -603,6 +607,9 @@ function rDeptContent(){
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:14px">
+          <select class="ssel" style="font-size:11px;padding:2px 6px" onchange="sstat(${dgo.id},this.value)" onclick="event.stopPropagation()">
+            ${['Draft','Approved'].map(function(s){return '<option '+(s===dgo.status?'selected':'')+'>'+s+'</option>';}).join('')}
+          </select>
           <span class="ibtn" onclick="event.stopPropagation();openEdit(${dgo.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><path d="M7 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1"/><path d="M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97L9 12v3h3l8.385-8.415z"/></svg></span>
           <span class="ibtn" onclick="event.stopPropagation();dupG(${dgo.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></span>
           <span class="ibtn del" onclick="event.stopPropagation();delG(${dgo.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg></span>
@@ -622,6 +629,11 @@ function rDeptContent(){
           ${lk.length===0
             ?`<div style="font-size:12px;color:var(--blue);opacity:.7;padding:6px 0;text-align:center">No employee goals linked yet.</div>`
             :lk.map(eg=>empGoalCard(eg)).join('')}
+          <div style="padding-top:10px;margin-top:10px;border-top:1px solid rgba(34,85,204,.12)" onclick="event.stopPropagation()">
+            <div style="font-size:10px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Notes</div>
+            <textarea class="fi" id="notes-${dgo.id}" rows="2" placeholder="Add a note…" style="font-size:12px;resize:none;border-color:rgba(34,85,204,.2)">${dgo.notes||''}</textarea>
+            <button class="btn btnsm" style="margin-top:4px;font-size:11px" onclick="saveNotes(${dgo.id});event.stopPropagation()">Save note</button>
+          </div>
         </div>
       </div>
     </div>`;
@@ -674,6 +686,11 @@ function empGoalCard(g){
           <span class="ibtn del" style="width:24px;height:24px" onclick="event.stopPropagation();delG(${g.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg></span>
         </div>
       </div>
+      <div style="padding-top:8px;margin-top:8px;border-top:1px solid rgba(34,85,204,.12)" onclick="event.stopPropagation()">
+        <div style="font-size:10px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Notes</div>
+        <textarea class="fi" id="notes-${g.id}" rows="2" placeholder="Add a note…" style="font-size:12px;resize:none;border-color:rgba(34,85,204,.2)">${g.notes||''}</textarea>
+        <button class="btn btnsm" style="margin-top:4px;font-size:11px" onclick="saveNotes(${g.id});event.stopPropagation()">Save note</button>
+      </div>
     </div>
   </div>`;
 }
@@ -701,11 +718,6 @@ function gcard(g,opts={}){
         ${actualRow}
         <div class="gc-ar"><span class="ibtn" onclick="openEdit(${g.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><path d="M7 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1"/><path d="M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97L9 12v3h3l8.385-8.415z"/></svg></span><span class="ibtn" onclick="dupG(${g.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></span><span class="ibtn del" onclick="delG(${g.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg></span></div>
       </div>
-      <div style="padding:8px 0 2px;border-top:1px solid var(--g100);margin-top:8px">
-        <div style="font-size:10px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Notes</div>
-        <textarea class="fi" id="notes-${g.id}" rows="2" placeholder="Add a note…" onclick="event.stopPropagation()" style="font-size:12px;resize:none">${g.notes||''}</textarea>
-        <button class="btn btnsm" style="margin-top:5px;font-size:11px" onclick="saveNotes(${g.id})">Save note</button>
-      </div>
       <div style="padding:6px 0 2px;border-top:1px solid rgba(34,85,204,.1);margin-top:6px">
         <div style="font-size:10px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Notes</div>
         <textarea class="fi" id="notes-${g.id}" rows="2" placeholder="Add a note…" onclick="event.stopPropagation()" style="font-size:12px;resize:none;border-color:rgba(34,85,204,.2)">${g.notes||''}</textarea>
@@ -720,10 +732,14 @@ function gcard(g,opts={}){
 function togGcx(id){ gcxOpen[id]=!gcxOpen[id]; const el=document.getElementById('gcx-'+id); if(el)el.classList.toggle('open',!!gcxOpen[id]); }
 
 // ═══ MUTATIONS ════════════════════════════════════════════════════
-function sstat(id,v){ const g=goals.find(g=>g.id===id); if(g){g.status=v;refresh();} }
-function qsave(id){ const g=goals.find(g=>g.id===id),el=document.getElementById('upd-'+id); if(g&&el){g.actual=Number(el.value);refresh();} }
-function dupG(id){ const g=goals.find(g=>g.id===id); if(!g)return; goals.push(Object.assign({},g,{id:nid(),title:g.title+' (copy)',status:'Draft',doid:undefined})); refresh(); }
-function delG(id){ if(!confirm('Delete this goal?'))return; goals=goals.filter(g=>g.id!==id); refresh(); }
+function sstat(id,v){ const g=goals.find(g=>g.id===id); if(g){g.status=v;refresh();autoSave();} }
+function qsave(id){ const g=goals.find(g=>g.id===id),el=document.getElementById('upd-'+id); if(g&&el){g.actual=Number(el.value);refresh();autoSave();} }
+function saveNotes(id){
+  const g=goals.find(g=>g.id===id),el=document.getElementById('notes-'+id);
+  if(g&&el){g.notes=el.value.trim(); refresh(); autoSave(); showToast('Note saved');}
+}
+function dupG(id){ const g=goals.find(g=>g.id===id); if(!g)return; goals.push(Object.assign({},g,{id:nid(),title:g.title+' (copy)',status:'Draft',doid:undefined})); refresh(); autoSave(); }
+function delG(id){ if(!confirm('Delete this goal?'))return; goals=goals.filter(g=>g.id!==id); refresh(); autoSave(); }
 
 
 // ── Assign to Employee modal ──────────────────────────────────
@@ -1056,8 +1072,14 @@ async function runSmart(){
     if(data.error)throw new Error();
     const raw=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
     W.smartResult=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    const hasVerb=startsWithActionVerb(txt);
+    if(hasVerb && (!W.smartResult.S || W.smartResult.S.ok===false)){
+      W.smartResult.S={ok:true,comment:'Starts with a clear action verb.'};
+    } else if(!hasVerb && W.smartResult.S && W.smartResult.S.ok){
+      W.smartResult.S.comment=(W.smartResult.S.comment||'')+' Consider starting the goal with a stronger action verb.';
+    }
   }catch(e){
-    const hasNum=/\d/.test(txt),hasTime=/(Q[1-4]|quarter|month|week|year|by\s)/i.test(txt),hasVerb=/^(achieve|close|reduce|increase|deliver|launch|build|complete|grow|implement|establish|develop|certify)/i.test(txt);
+    const hasNum=/\d/.test(txt),hasTime=/(Q[1-4]|quarter|month|week|year|by\s)/i.test(txt),hasVerb=startsWithActionVerb(txt);
     W.smartResult={S:{ok:hasVerb,comment:hasVerb?'Starts with a clear action verb.':'Start with a specific action verb.'},M:{ok:hasNum,comment:hasNum?'Contains a numeric target.':'Add a specific number.'},A:{ok:true,comment:'Review target against team capacity.'},R:{ok:true,comment:'Linked to stated objective.'},T:{ok:hasTime,comment:hasTime?'Timeline referenced.':'Add a specific quarter or deadline.'}};
   }
   panel.innerHTML=renderSmart(W.smartResult); panel.classList.add('show');
