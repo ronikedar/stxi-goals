@@ -339,6 +339,26 @@ function getCoById(id){ return companyObjectives.find(function(g){return g.id===
 function getCoMeta(id){
   return getCoById(id) || {label:'Unlinked',title:'',color:'var(--g300)'};
 }
+function normalizeGoal(g){
+  g = g || {};
+  var legacyNotes = typeof g.notes === 'string' ? g.notes.trim() : '';
+  if(typeof g.description !== 'string') g.description = '';
+  if(!g.description && legacyNotes && !Array.isArray(g.noteEntries)) g.description = legacyNotes;
+  if(!Array.isArray(g.noteEntries)) g.noteEntries = [];
+  if(typeof g.notes !== 'string') g.notes = '';
+  return g;
+}
+function noteStamp(ts){
+  var d = ts ? new Date(ts) : new Date();
+  return d.toLocaleString('en-GB',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function renderNoteFeed(g){
+  var entries=(g.noteEntries||[]).slice().sort(function(a,b){return String(b.at||'').localeCompare(String(a.at||''));});
+  if(!entries.length) return `<div style="font-size:12px;color:var(--g500)">No notes yet.</div>`;
+  return entries.map(function(n){
+    return `<div style="padding:8px 0;border-top:1px solid var(--g100)"><div style="font-size:11px;color:var(--g500);margin-bottom:3px">${n.by||'Team'} · ${noteStamp(n.at)}</div><div style="font-size:12px;color:var(--g700);white-space:pre-wrap">${n.text||''}</div></div>`;
+  }).join('');
+}
 function companyObjectiveOptions(){
   return companyObjectives.map(function(co){
     return `<div class="co-opt${W.companyObjId===co.id?' sel':''}" onclick="W.companyObjId='${co.id}';rWiz()">
@@ -593,7 +613,6 @@ function rDeptContent(){
         <div style="flex:1">
           <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px">
             <div style="font-size:13px;font-weight:600;flex:1;color:var(--bk)">${dgo.title}</div>
-            <span class="badge ${bc(dgo.status)}" style="flex-shrink:0">${dgo.status}</span>
           </div>
           <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px">
             <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:${co.color}15;color:${co.color};font-weight:600;border:1px solid ${co.color}30">${co.label}</span>
@@ -630,9 +649,15 @@ function rDeptContent(){
             ?`<div style="font-size:12px;color:var(--blue);opacity:.7;padding:6px 0;text-align:center">No employee goals linked yet.</div>`
             :lk.map(eg=>empGoalCard(eg)).join('')}
           <div style="padding-top:10px;margin-top:10px;border-top:1px solid rgba(34,85,204,.12)" onclick="event.stopPropagation()">
+            <div style="font-size:10px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Description</div>
+            <textarea class="fi" id="desc-${dgo.id}" rows="2" placeholder="Add a short description…" style="font-size:12px;resize:none;border-color:rgba(34,85,204,.2)">${dgo.description||''}</textarea>
+            <button class="btn btnsm" style="margin-top:4px;font-size:11px" onclick="saveDescription(${dgo.id});event.stopPropagation()">Save description</button>
+          </div>
+          <div style="padding-top:10px;margin-top:10px;border-top:1px solid rgba(34,85,204,.12)" onclick="event.stopPropagation()">
             <div style="font-size:10px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Notes</div>
-            <textarea class="fi" id="notes-${dgo.id}" rows="2" placeholder="Add a note…" style="font-size:12px;resize:none;border-color:rgba(34,85,204,.2)">${dgo.notes||''}</textarea>
-            <button class="btn btnsm" style="margin-top:4px;font-size:11px" onclick="saveNotes(${dgo.id});event.stopPropagation()">Save note</button>
+            <textarea class="fi" id="note-entry-${dgo.id}" rows="2" placeholder="Add an update…" style="font-size:12px;resize:none;border-color:rgba(34,85,204,.2)"></textarea>
+            <button class="btn btnsm" style="margin-top:4px;font-size:11px" onclick="addNoteEntry(${dgo.id});event.stopPropagation()">Add note</button>
+            <div style="margin-top:8px">${renderNoteFeed(dgo)}</div>
           </div>
         </div>
       </div>
@@ -687,9 +712,15 @@ function empGoalCard(g){
         </div>
       </div>
       <div style="padding-top:8px;margin-top:8px;border-top:1px solid rgba(34,85,204,.12)" onclick="event.stopPropagation()">
+        <div style="font-size:10px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Description</div>
+        <textarea class="fi" id="desc-${g.id}" rows="2" placeholder="Add a short description…" style="font-size:12px;resize:none;border-color:rgba(34,85,204,.2)">${g.description||''}</textarea>
+        <button class="btn btnsm" style="margin-top:4px;font-size:11px" onclick="saveDescription(${g.id});event.stopPropagation()">Save description</button>
+      </div>
+      <div style="padding-top:8px;margin-top:8px;border-top:1px solid rgba(34,85,204,.12)" onclick="event.stopPropagation()">
         <div style="font-size:10px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Notes</div>
-        <textarea class="fi" id="notes-${g.id}" rows="2" placeholder="Add a note…" style="font-size:12px;resize:none;border-color:rgba(34,85,204,.2)">${g.notes||''}</textarea>
-        <button class="btn btnsm" style="margin-top:4px;font-size:11px" onclick="saveNotes(${g.id});event.stopPropagation()">Save note</button>
+        <textarea class="fi" id="note-entry-${g.id}" rows="2" placeholder="Add an update…" style="font-size:12px;resize:none;border-color:rgba(34,85,204,.2)"></textarea>
+        <button class="btn btnsm" style="margin-top:4px;font-size:11px" onclick="addNoteEntry(${g.id});event.stopPropagation()">Add note</button>
+        <div style="margin-top:8px">${renderNoteFeed(g)}</div>
       </div>
     </div>
   </div>`;
@@ -719,9 +750,15 @@ function gcard(g,opts={}){
         <div class="gc-ar"><span class="ibtn" onclick="openEdit(${g.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><path d="M7 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1"/><path d="M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97L9 12v3h3l8.385-8.415z"/></svg></span><span class="ibtn" onclick="dupG(${g.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></span><span class="ibtn del" onclick="delG(${g.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg></span></div>
       </div>
       <div style="padding:6px 0 2px;border-top:1px solid rgba(34,85,204,.1);margin-top:6px">
+        <div style="font-size:10px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Description</div>
+        <textarea class="fi" id="desc-${g.id}" rows="2" placeholder="Add a short description…" onclick="event.stopPropagation()" style="font-size:12px;resize:none;border-color:rgba(34,85,204,.2)">${g.description||''}</textarea>
+        <button class="btn btnsm" style="margin-top:4px;font-size:11px" onclick="saveDescription(${g.id})">Save description</button>
+      </div>
+      <div style="padding:6px 0 2px;border-top:1px solid rgba(34,85,204,.1);margin-top:6px">
         <div style="font-size:10px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Notes</div>
-        <textarea class="fi" id="notes-${g.id}" rows="2" placeholder="Add a note…" onclick="event.stopPropagation()" style="font-size:12px;resize:none;border-color:rgba(34,85,204,.2)">${g.notes||''}</textarea>
-        <button class="btn btnsm" style="margin-top:4px;font-size:11px" onclick="saveNotes(${g.id})">Save note</button>
+        <textarea class="fi" id="note-entry-${g.id}" rows="2" placeholder="Add an update…" onclick="event.stopPropagation()" style="font-size:12px;resize:none;border-color:rgba(34,85,204,.2)"></textarea>
+        <button class="btn btnsm" style="margin-top:4px;font-size:11px" onclick="addNoteEntry(${g.id})">Add note</button>
+        <div style="margin-top:8px">${renderNoteFeed(g)}</div>
       </div>
     </div>`;
   }
@@ -734,11 +771,22 @@ function togGcx(id){ gcxOpen[id]=!gcxOpen[id]; const el=document.getElementById(
 // ═══ MUTATIONS ════════════════════════════════════════════════════
 function sstat(id,v){ const g=goals.find(g=>g.id===id); if(g){g.status=v;refresh();autoSave();} }
 function qsave(id){ const g=goals.find(g=>g.id===id),el=document.getElementById('upd-'+id); if(g&&el){g.actual=Number(el.value);refresh();autoSave();} }
-function saveNotes(id){
-  const g=goals.find(g=>g.id===id),el=document.getElementById('notes-'+id);
-  if(g&&el){g.notes=el.value.trim(); refresh(); autoSave(); showToast('Note saved');}
+function saveDescription(id){
+  const g=goals.find(g=>g.id===id),el=document.getElementById('desc-'+id);
+  if(g&&el){g.description=el.value.trim(); refresh(); autoSave(); showToast('Description saved');}
 }
-function dupG(id){ const g=goals.find(g=>g.id===id); if(!g)return; goals.push(Object.assign({},g,{id:nid(),title:g.title+' (copy)',status:'Draft',doid:undefined})); refresh(); autoSave(); }
+function addNoteEntry(id){
+  const g=goals.find(g=>g.id===id),el=document.getElementById('note-entry-'+id);
+  if(g&&el&&el.value.trim()){
+    g.noteEntries = Array.isArray(g.noteEntries) ? g.noteEntries : [];
+    g.noteEntries.push({text:el.value.trim(),by:currentUserName(),at:new Date().toISOString()});
+    el.value='';
+    refresh();
+    autoSave();
+    showToast('Note added');
+  }
+}
+function dupG(id){ const g=goals.find(g=>g.id===id); if(!g)return; goals.push(Object.assign({},g,{id:nid(),title:g.title+' (copy)',status:'Draft',doid:undefined,noteEntries:(g.noteEntries||[]).map(function(n){return Object.assign({},n);})})); refresh(); autoSave(); }
 function delG(id){ if(!confirm('Delete this goal?'))return; goals=goals.filter(g=>g.id!==id); refresh(); autoSave(); }
 
 
@@ -830,7 +878,7 @@ function doAssign(deptGoalId){
     measurement:g.measurement, unit:g.unit, baseline:g.baseline,
     target:g.target, actual:g.baseline, from:g.from, to:g.to,
     owner:empName, deptObj:g.title, companyObjId:g.companyObjId,
-    status:'Draft', notes:'', createdBy:currentUserName(),
+    status:'Draft', description:'', notes:'', noteEntries:[], createdBy:currentUserName(),
     createdAt:new Date().toISOString()
   });
   document.getElementById('assign-modal').remove();
@@ -1011,7 +1059,7 @@ function wSave(){
   goals.push({id:nid(),type:W.goalType,dept:W.dept,title:W.title,measurement:W.measurement,unit:W.unit,
     baseline:W.baseline,target:W.target,actual:W.baseline,from:W.from,to:W.to,
     owner:W.goalType==='employee'?W.owner:currentUserName(),deptObj:W.goalType==='dept'?'':W.deptObj,companyObjId:W.companyObjId,
-    status:'Draft',notes:'',createdBy:currentUserName(),createdAt:new Date().toISOString()});
+    status:'Draft',description:'',notes:'',noteEntries:[],createdBy:currentUserName(),createdAt:new Date().toISOString()});
   closeWiz(); nav(returnPage); autoSave();
 }
 
@@ -1106,6 +1154,7 @@ function openEdit(id){
     <div id="e-ap">
       ${(()=>{const co=getCoMeta(g.companyObjId);return `<div style="display:flex;align-items:center;gap:5px;padding:6px 0;font-size:12px;color:var(--g500)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${co.color}"></span>${co.label}</div>`;})()}
     </div>`:''}
+    <div class="fg"><div class="fl">Description</div><textarea class="fi" id="e-desc" rows="3">${(g.description||'').replace(/"/g,'&quot;')}</textarea></div>
     <div class="fg"><div class="fl">Owner</div><input class="fi" id="e-ow" type="text" value="${g.owner||''}"></div>
     <input type="hidden" id="e-id" value="${g.id}">
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
@@ -1123,6 +1172,7 @@ function saveEdit(){
   g.from=document.getElementById('e-from').value; g.to=document.getElementById('e-to').value;
   const eco=document.getElementById('e-co'); if(eco) g.companyObjId=eco.value;
   const de=document.getElementById('e-do'); if(de){g.deptObj=de.value;const obj=goals.find(function(goal){return goal.type==='dept'&&goal.dept===g.dept&&goal.title===de.value;});if(obj)g.companyObjId=obj.companyObjId;}
+  var ed=document.getElementById('e-desc'); if(ed) g.description=ed.value.trim();
   var ow=document.getElementById('e-ow'); if(ow&&ow.value.trim()) g.owner=normName(ow.value);
   closeEdit(); refresh(); autoSave();
 }
@@ -1153,7 +1203,7 @@ function spLoad(){
     if(xhr.status === 200){
       try {
         var data = JSON.parse(xhr.responseText);
-        goals = Array.isArray(data.goals) ? data.goals : [];
+        goals = (Array.isArray(data.goals) ? data.goals : []).map(normalizeGoal);
         companyObjectives = loadCompanyObjectives(data.companyObjectives, goals);
         if(goals.length){
           var maxId = Math.max.apply(null, goals.map(function(g){return g.id||0;}).concat([idc]));
@@ -1172,7 +1222,7 @@ function spLoad(){
 
 function loadFallback(){
   var raw = localStorage.getItem("stxi_goals_backup");
-  if(raw){ try{ var d=JSON.parse(raw); goals=Array.isArray(d.goals)?d.goals:[]; companyObjectives=loadCompanyObjectives(d.companyObjectives,goals); refresh(); showToast("Offline — local backup"); }catch(e){} }
+  if(raw){ try{ var d=JSON.parse(raw); goals=(Array.isArray(d.goals)?d.goals:[]).map(normalizeGoal); companyObjectives=loadCompanyObjectives(d.companyObjectives,goals); refresh(); showToast("Offline — local backup"); }catch(e){} }
 }
 
 function spWrite(){
