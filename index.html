@@ -302,7 +302,7 @@ const LEGACY_COMPANY_OBJECTIVES = [
    title:'Build an agile, AI-powered organization: automate repetitive processes across all departments and improve overall efficiency by 50%',
    sub:'Build an agile, AI-powered organization: automate repetitive processes across all departments and improve overall efficiency by 50%'},
 ];
-const DEPTS = ['Sales — Israel','Sales — Germany','Sales — USA','R&D','Operations','Engineering','Marketing','Finance','Quality','Tech Support'];
+const DEPTS = ['Sales — Israel','Sales — Germany','Sales — USA','R&D','Operations','Engineering','Marketing','Finance','Quality','Applications'];
 const QS = ['Q2 2026','Q3 2026','Q4 2026','Q1 2027'];
 
 // ═══ GOALS STATE ══════════════════════════════════════════════════
@@ -689,6 +689,7 @@ function empGoalCard(g){
       ${ownerAv(g.owner)}<span style="font-size:11px;color:var(--g700)">${g.owner}</span>
       <span class="meta"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><rect x="4" y="5" width="16" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="4" y1="11" x2="20" y2="11"/></svg>${g.from} – ${g.to}</span>
     </div>
+    ${g.measurement?`<div style="font-size:10px;color:var(--g400);margin-bottom:3px">${g.measurement}</div>`:''}
     <div class="emp-goal-prog">
       <div style="flex:1">${pbarcol(p,4,'var(--blue)')}</div>
       <div class="emp-goal-pct">${p}%</div>
@@ -736,7 +737,8 @@ function gcard(g,opts={}){
   const doLine=opts.showDeptObj&&g.type==='employee'&&g.deptObj
     ?`<div class="gc-deptobj" title="${g.deptObj}">↳ ${tr(g.deptObj,72)}</div>`:'';
   const whoRow=`<div class="gc-who">${ownerAv(g.owner)}<span style="font-size:12px;font-weight:500;color:var(--g700)">${g.owner}</span>${g.createdBy&&g.createdBy!==g.owner?'<span style="font-size:10px;color:var(--g400)">Created by '+g.createdBy+'</span>':''}${g.type==='dept'?'<span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;background:#EEF4FF;color:var(--blue);border:1px solid rgba(34,85,204,.2)">Dept objective</span>':'<span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;background:var(--red-l);color:var(--red);border:1px solid rgba(232,34,10,.2)">Employee goal</span>'}${dtag(g.dept)}<span class="meta"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><rect x="4" y="5" width="16" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="4" y1="11" x2="20" y2="11"/></svg>${g.from} – ${g.to}</span>${g.type==='dept'?`<span class="meta"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.85"/></svg>${ec} emp. goal${ec!==1?'s':''}</span>`:''}</div>`;
-  const progArea=`<div class="gc-prog"><div style="flex:1">${pbar(p,6)}</div><div style="text-align:right;flex-shrink:0;margin-left:12px"><div class="gc-pct">${p}%</div><div class="gc-psub">${fv(g.actual,g.unit)} / ${fv(g.target,g.unit)}</div></div></div>`;
+  const measLine=g.measurement?`<div style="font-size:11px;color:var(--g400);margin:6px 0 4px">${g.measurement}</div>`:'';
+  const progArea=measLine+`<div class="gc-prog"><div style="flex:1">${pbar(p,6)}</div><div style="text-align:right;flex-shrink:0;margin-left:12px"><div class="gc-pct">${p}%</div><div class="gc-psub">${fv(g.actual,g.unit)} / ${fv(g.target,g.unit)}</div></div></div>`;
   let expand='';
   if(opts.act){
     const isOpen=!!gcxOpen[g.id];
@@ -903,7 +905,17 @@ function openWizard(dept,deptObjTitle){
   document.getElementById('wiz-modal').classList.add('open'); rWiz();
 }
 function closeWiz(){ document.getElementById('wiz-modal').classList.remove('open'); }
-document.getElementById('wiz-modal').addEventListener('click',function(e){if(e.target===this)closeWiz();});
+function wizHasContent(){
+  // Capture latest textarea value
+  var ta=document.getElementById('w-title'); if(ta && ta.value && ta.value.trim()) return true;
+  return !!(W && (W.title||W.measurement||W.deptObj||W.companyObjId));
+}
+document.getElementById('wiz-modal').addEventListener('click',function(e){
+  if(e.target===this){
+    if(wizHasContent() && !confirm('Discard this goal? Your changes will be lost.')) return;
+    closeWiz();
+  }
+});
 
 function stepBar(){
   const lbls=W.goalType==='employee'?['Objective','Goal','KPI','Timeline']:['Company objective','Objective','KPI','Timeline'];
@@ -960,6 +972,25 @@ function rS0(){
   }
 }
 
+function renderSugList(){
+  if(W._fetching && W.suggestions.length===0){
+    return `<div style="display:flex;align-items:center;gap:8px;padding:12px;background:var(--g50);border-radius:var(--r);font-size:13px;color:var(--g500)"><span class="spinner"></span>Generating suggestions…</div>`;
+  }
+  if(W.suggestions.length>0){
+    return `<div style="font-size:11px;font-weight:600;color:var(--g700);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:5px"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/><path d="M5 3l.5 1.5L7 5l-1.5.5L5 7l-.5-1.5L3 5l1.5-.5z"/><path d="M19 13l.5 1.5L21 15l-1.5.5L19 17l-.5-1.5L17 15l1.5-.5z"/></svg>Suggested — click to use as starting point</div>`+
+      W.suggestions.map((s,i)=>`<div class="sug-row${W.selIdx===i?' sel':''}" onclick="selSug(${i})">
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          <div class="sug-radio" style="margin-top:2px">${W.selIdx===i?'<svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><polyline points="20 6 9 17 4 12"/></svg>':''}</div>
+          <div style="flex:1"><div style="font-size:12px;font-weight:500;line-height:1.4;margin-bottom:3px">${s.title}</div>
+            <div class="stags"><span class="stag">S</span><span class="stag">M</span><span class="stag">A</span><span class="stag">R</span><span class="stag">T</span></div>
+            <div style="font-size:11px;color:var(--g500);margin-top:3px">${s.measurement} · ${s.baseline}→${s.target} ${s.unit}</div>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+  return `<div style="font-size:12px;color:var(--red);padding:8px 0"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Could not load suggestions. Write your own below.</div>`;
+}
+
 function rS1(){
   const co=getCoMeta(W.companyObjId);
   const sumBar=W.goalType==='employee'
@@ -969,20 +1000,7 @@ function rS1(){
        <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${co.color}"></span><span style="font-size:12px;font-weight:500">${co.label}</span></div></div>`;
 
   if(W.suggestions.length===0&&!W._fetching){ W._fetching=true; setTimeout(()=>fetchSugg(),50); }
-  let sugList=W._fetching&&W.suggestions.length===0
-    ?`<div style="display:flex;align-items:center;gap:8px;padding:12px;background:var(--g50);border-radius:var(--r);font-size:13px;color:var(--g500)"><span class="spinner"></span>Generating suggestions…</div>`
-    :W.suggestions.length>0
-      ?`<div style="font-size:11px;font-weight:600;color:var(--g700);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:5px"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/><path d="M5 3l.5 1.5L7 5l-1.5.5L5 7l-.5-1.5L3 5l1.5-.5z"/><path d="M19 13l.5 1.5L21 15l-1.5.5L19 17l-.5-1.5L17 15l1.5-.5z"/></svg>Suggested — click to use as starting point</div>`+
-        W.suggestions.map((s,i)=>`<div class="sug-row${W.selIdx===i?' sel':''}" onclick="selSug(${i})">
-          <div style="display:flex;align-items:flex-start;gap:8px">
-            <div class="sug-radio" style="margin-top:2px">${W.selIdx===i?'<svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px"><polyline points="20 6 9 17 4 12"/></svg>':''}</div>
-            <div style="flex:1"><div style="font-size:12px;font-weight:500;line-height:1.4;margin-bottom:3px">${s.title}</div>
-              <div class="stags"><span class="stag">S</span><span class="stag">M</span><span class="stag">A</span><span class="stag">R</span><span class="stag">T</span></div>
-              <div style="font-size:11px;color:var(--g500);margin-top:3px">${s.measurement} · ${s.baseline}→${s.target} ${s.unit}</div>
-            </div>
-          </div>
-        </div>`).join('')
-      :`<div style="font-size:12px;color:var(--red);padding:8px 0"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Could not load suggestions. Write your own below.</div>`;
+  let sugList=`<div id="wiz-suglist">`+renderSugList()+`</div>`;
 
   return sumBar+sugList+`<div style="background:var(--g50);border:1px solid var(--g200);border-radius:var(--r);padding:14px;margin-top:10px">
     <div style="font-size:11px;font-weight:600;color:var(--g700);margin-bottom:8px"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px"><path d="M7 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1"/><path d="M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97L9 12v3h3l8.385-8.415z"/></svg> ${W.selIdx>=0?'Edit selected or write your own':'Write your own goal'}</div>
@@ -1102,7 +1120,16 @@ async function fetchSugg(){
     const parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
     W.suggestions=parsed.goals&&parsed.goals.length?parsed.goals:fallback;
   }catch(e){ W.suggestions=fallback; }
-  W._fetching=false; if(W.step===1)rWiz();
+  W._fetching=false;
+  // Don't re-render the whole wizard — that would destroy the textarea the user is typing in.
+  // Just update the suggestions container, preserving the user's typed title.
+  if(W.step===1){
+    var ta=document.getElementById('w-title');
+    if(ta) W.title=ta.value; // preserve current typing
+    var sl=document.getElementById('wiz-suglist');
+    if(sl){ sl.innerHTML=renderSugList(); }
+    else { rWiz(); } // fallback if container disappeared
+  }
 }
 
 async function runSmart(){
@@ -1139,8 +1166,10 @@ function openEdit(id){
   const g=goals.find(g=>g.id===id); if(!g)return;
   const dObjs=goals.filter(function(goal){return goal.type==='dept'&&goal.dept===g.dept;});
   const companySelect=`<div class="fg"><div class="fl">Company objective</div><select class="fs" id="e-co">${companyObjectives.map(function(co){return `<option value="${co.id}" ${co.id===g.companyObjId?'selected':''}>${co.label} — ${tr(co.title,70)}</option>`;}).join('')}</select></div>`;
+  const deptSelect=g.type==='dept'?`<div class="fg"><div class="fl">Department</div><select class="fs" id="e-dept">${DEPTS.map(function(d){return `<option ${d===g.dept?'selected':''}>${d}</option>`;}).join('')}</select><div style="font-size:11px;color:var(--g500);margin-top:4px">Changing department will also move any linked employee goals.</div></div>`:'';
   document.getElementById('edit-body').innerHTML=`
     <div class="fg"><div class="fl">Title</div><input class="fi" id="e-t" value="${g.title.replace(/"/g,'&quot;')}"></div>
+    ${deptSelect}
     <div class="fg"><div class="fl">Measurement / KPI</div><input class="fi" id="e-m" value="${g.measurement}"></div>
     <div class="fg"><div class="fl">Unit type</div><div class="utog"><button class="utb ${g.unit==='%'?'active':''}" id="eu-pct" onclick="euU('%')">%</button><button class="utb ${g.unit!=='%'?'active':''}" id="eu-num" onclick="euU('units')">Number</button></div><input type="hidden" id="e-u" value="${g.unit}"></div>
     <div class="tc"><div class="fg"><div class="fl">Baseline</div><input class="fi" id="e-b" type="number" value="${g.baseline}"></div><div class="fg"><div class="fl">Target</div><input class="fi" id="e-tg" type="number" value="${g.target}"></div></div>
@@ -1167,11 +1196,30 @@ function euU(u){ document.getElementById('e-u').value=u; document.getElementById
 function eDoChg(gid){ const g=goals.find(g=>g.id===gid); if(!g)return; const v=document.getElementById('e-do').value; const obj=goals.find(function(goal){return goal.type==='dept'&&goal.dept===g.dept&&goal.title===v;}); if(obj){g.companyObjId=obj.companyObjId;const co=getCoMeta(obj.companyObjId);document.getElementById('e-ap').innerHTML=`<div style="display:flex;align-items:center;gap:5px;padding:6px 0;font-size:12px;color:var(--g500)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${co.color}"></span>${co.label}</div>`;} }
 function saveEdit(){
   const id=Number(document.getElementById('e-id').value),g=goals.find(g=>g.id===id); if(!g)return;
+  const oldDept=g.dept, oldTitle=g.title;
   g.title=document.getElementById('e-t').value; g.measurement=document.getElementById('e-m').value; g.unit=document.getElementById('e-u').value;
   g.baseline=Number(document.getElementById('e-b').value); g.target=Number(document.getElementById('e-tg').value); g.actual=Number(document.getElementById('e-a').value);
   g.from=document.getElementById('e-from').value; g.to=document.getElementById('e-to').value;
+  const edept=document.getElementById('e-dept'); if(edept) g.dept=edept.value;
   const eco=document.getElementById('e-co'); if(eco) g.companyObjId=eco.value;
   const de=document.getElementById('e-do'); if(de){g.deptObj=de.value;const obj=goals.find(function(goal){return goal.type==='dept'&&goal.dept===g.dept&&goal.title===de.value;});if(obj)g.companyObjId=obj.companyObjId;}
+  // If a department objective moved to a different department, follow with its linked employee goals
+  if(g.type==='dept' && g.dept!==oldDept){
+    goals.forEach(function(emp){
+      if(emp.type==='employee' && emp.dept===oldDept && emp.deptObj===oldTitle){
+        emp.dept = g.dept;
+        emp.deptObj = g.title;
+        emp.companyObjId = g.companyObjId;
+      }
+    });
+  } else if(g.type==='dept' && g.title!==oldTitle){
+    // Title-only change: keep linked employee goals pointing to the new title
+    goals.forEach(function(emp){
+      if(emp.type==='employee' && emp.dept===g.dept && emp.deptObj===oldTitle){
+        emp.deptObj = g.title;
+      }
+    });
+  }
   var ed=document.getElementById('e-desc'); if(ed) g.description=ed.value.trim();
   var ow=document.getElementById('e-ow'); if(ow&&ow.value.trim()) g.owner=normName(ow.value);
   closeEdit(); refresh(); autoSave();
@@ -1205,6 +1253,9 @@ function spLoad(){
         var data = JSON.parse(xhr.responseText);
         goals = (Array.isArray(data.goals) ? data.goals : []).map(normalizeGoal);
         companyObjectives = loadCompanyObjectives(data.companyObjectives, goals);
+        // One-time migration: rename "Tech Support" dept to "Applications"
+        var migrated = 0;
+        goals.forEach(function(g){ if(g.dept === 'Tech Support'){ g.dept = 'Applications'; migrated++; } });
         if(goals.length){
           var maxId = Math.max.apply(null, goals.map(function(g){return g.id||0;}).concat([idc]));
           idc = maxId + 1;
@@ -1213,6 +1264,7 @@ function spLoad(){
         var meta = data._meta || {};
         updateBadge(meta.lastSavedAt, meta.lastSavedBy, false);
         showToast("✓ Connected");
+        if(migrated > 0){ autoSave(); }
       } catch(e){ badge("Parse error","var(--red)"); }
     } else { badge("Load failed","var(--red)"); loadFallback(); }
   };
@@ -1222,7 +1274,7 @@ function spLoad(){
 
 function loadFallback(){
   var raw = localStorage.getItem("stxi_goals_backup");
-  if(raw){ try{ var d=JSON.parse(raw); goals=(Array.isArray(d.goals)?d.goals:[]).map(normalizeGoal); companyObjectives=loadCompanyObjectives(d.companyObjectives,goals); refresh(); showToast("Offline — local backup"); }catch(e){} }
+  if(raw){ try{ var d=JSON.parse(raw); goals=(Array.isArray(d.goals)?d.goals:[]).map(normalizeGoal); goals.forEach(function(g){ if(g.dept === 'Tech Support') g.dept = 'Applications'; }); companyObjectives=loadCompanyObjectives(d.companyObjectives,goals); refresh(); showToast("Offline — local backup"); }catch(e){} }
 }
 
 function spWrite(){
